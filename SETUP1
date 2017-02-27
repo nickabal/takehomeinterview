@@ -40,44 +40,9 @@ web_dir="planets"
 db_file="planets.txt"
 db_dir="details"
 
-skip=0
-skip_n=0
 
-name=$1
-size=$2
-distance=$3
-ordinality=$4
-
-function skip() {
-echo "<p>Name and Ordinality must be unique, and all fields must be filled out.</p>"
-}
-function skip_n() { 
-echo "<p>Size, Ordinality, and Distance must all be numeric.</p>"
-} 
-
-function test_numeric() {       
-case $1 in
-    *[!0-9,.]*) return 0;;
-    *) return 1;;
-esac
-}
-
-for i in $size $distance $ordinality; do 
-test_numeric $i
-if ((!$?)); then skip_n=1; fi
-done
-
-
-if ((!$skip_n)); then 
 if [ -n "$1" ] && [ -n "$2" ] && [ -n "$3" ] && [ -n "$4" ] && [ -n "$5" ]; then
 details=`echo $@ | sed "s/$1\ $2\ $3\ $4//"`
-
-previous_names=`awk -F'"'"'[>|<]'"'"' '"'"'{ print $13 }'"'"' $db_file`; for pre_name in $previous_names; do if [ "$pre_name" == "$name" ]; then skip=1; fi ; done;
-previous_ordinality=`awk -F'"'"'[>|<]'"'"' '"'"'{ print $7 }'"'"' $db_file`; for pre_ord in $previous_ordinality; do if [ "$pre_ord" == "$ordinality" ]; then skip=1; fi ; done;
-
-if (($skip)); then
-skip
-else
 
 #flat file
 echo "<tr><td><a href=\"/$web_dir/details/$1.html\">$4</a></td><td>$1</td><td>$2</td><td>$3</td></tr>" >> $db_file
@@ -87,13 +52,6 @@ echo "<table><tr><th>Ordinality</th><th>Name</th><th>Size</th><th>Distance</th><
 echo "<p>$details</p>" >> $db_dir/$1.html
 
 fi
-else 
-skip
-fi
-else
-skip_n
-fi
-
 cat $db_file
 
 echo "</table>"
@@ -108,8 +66,7 @@ ordinality: <input type=\"text\" name=\"ordinality\"><br>
 details: <textarea rows=\"4\" name=\"details\"></textarea><br>
 
 <input type=\"submit\">
-</form>"
-' > index.sh
+</form>"' > index.sh
 chmod +x index.sh
 
 #index.php
