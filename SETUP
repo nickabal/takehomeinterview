@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# deploy script, put this in webroot you have write access to.
+# ./SETUP
+# can run sudo if you have to
+# sudo ./SETUP 
+#
+# cleanup/restore: ./SETUP with_cleanup 
+
+# adjust as needed like your http://localhost/[your/webroot]/planets
+webdir=planets
+
+webuser=apache
+
+#root for webproject
+if [ "$1" == "with_cleanup" ]; then
+	rm -rf $webdir 
+fi
+mkdir $webdir
+
+chown $webuser $webdir
+
+cd $webdir || exit 1 #no write or root?
+
+#create structure
+mkdir details
+touch planets.txt
+chown $webuser planets.txt details
+
+echo "<table><tr><th>Ordinality</th><th>Name</th><th>Size</th><th>Distance</th></tr>" > planets.txt
+
+#create files
+
+#index.sh
+echo '
+#!/bin/bash
+
+web_dir="planets"
+
+db_file="planets.txt"
+db_dir="details"
+
+
+if [ -n "$1" ] && [ -n "$2" ] && [ -n "$3" ] && [ -n "$4" ] && [ -n "$5" ]; then
+details=`echo $@ | sed "s/$1\ $2\ $3\ $4//"`
+
+#flat file
+echo "<tr><td><a href=\"/$web_dir/details/$1.html\">$4</a></td><td>$1</td><td>$2</td><td>$3</td></tr>" >> $db_file
+
+#details
+echo "<table><tr><th>Ordinality</th><th>Name</th><th>Size</th><th>Distance</th></tr><tr><td><a href=\"/$web_dir/details/$1.html\">$4</a></td><td>$1</td><td>$2</td><td>$3</td></tr></table>" > $db_dir/$1.html
+echo "<p>$details</p>" >> $db_dir/$1.html
+
+fi
+cat $db_file
+
+echo "</table>"
+
+echo "<br>"
+echo "<br>"
+echo "<form method=\"get\" action=\"index.php\">
+name: <input type=\"text\" name=\"name\">
+size: <input type=\"text\" name=\"size\"><br>
+distance: <input type=\"text\" name=\"distance\">
+ordinality: <input type=\"text\" name=\"ordinality\"><br>
+details: <textarea rows=\"4\" name=\"details\"></textarea><br>
+
+<input type=\"submit\">
+</form>"' > index.sh
+chmod +x index.sh
+
+#index.php
+echo -n '<?php
+$strings="";
+foreach ($_GET as $key => $value) {
+$strings="$strings $value";
+}
+$result=shell_exec("/var/www/html/' > index.php
+echo -n $webdir >> index.php
+echo -n '/index.sh $strings");
+echo $result;
+?>' >> index.php
